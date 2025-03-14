@@ -115,16 +115,18 @@ body {
 
 /* Enhanced single column layout styles */
 .card {
+    margin-bottom: 2rem;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08) !important;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
 }
 
 .card-img-top {
-    max-height: 400px;
+    max-height: 350px;
     object-fit: cover;
 }
 
@@ -139,6 +141,6 @@ body {
 
 @media (min-width: 768px) {
     .container {
-        max-width: 800px;
+        max-width: 700px; /* Narrower container for better readability */
     }
 }

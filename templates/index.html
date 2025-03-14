@@ -21,6 +21,11 @@
                     <li class="nav-item">
                         <a class="nav-link" href="/"><i class="fas fa-home"></i> Trang chủ</a>
                     </li>
+                    {% if user %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard') }}"><i class="fas fa-chart-line"></i> Dashboard</a>
+                    </li>
+                    {% endif %}
                     <li class="nav-item">
                         <a class="nav-link" href="#"><i class="fas fa-tags"></i> Chủ đề</a>
                     </li>
@@ -104,8 +109,8 @@
         <form method="POST" action="{{ url_for('delete_posts') }}">
             <div class="row">
                 {% for post in user_posts %}
-                <div class="col-md-6 mb-4">
-                    <div class="card">
+                <div class="col-12 mb-4">  <!-- Changed from col-md-6 to col-12 -->
+                    <div class="card shadow-sm">
                         {% if post.image_url %}
                         <img src="{{ post.image_url }}" class="card-img-top" alt="{{ post.title }}">
                         {% endif %}
@@ -113,17 +118,19 @@
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="post_ids" value="{{ post.id }}" id="post_{{ post.id }}">
                                 <label class="form-check-label" for="post_{{ post.id }}">
-                                    <h5 class="card-title">{{ (page-1)*10 + loop.index }}. {{ post.title }}</h5>
+                                    <h5 class="card-title">{{ post.title }}</h5>
                                     <p class="card-text">{{ post.content }}</p>
                                     <p class="card-text"><small class="text-muted">Ngày: {{ post.date }} | Trạng thái: {{ post.task }}</small></p>
                                 </label>
                             </div>
-                            <button class="btn btn-warning btn-sm edit-post-btn" data-post-id="{{ post.id }}" data-bs-toggle="modal" data-bs-target="#editPostsModal">
-                                <i class="fas fa-pen"></i> Sửa
-                            </button>
-                            <button class="btn btn-danger btn-sm delete-post-btn" data-post-id="{{ post.id }}" data-bs-toggle="modal" data-bs-target="#deletePostsModal">
-                                <i class="fas fa-trash"></i> Xóa
-                            </button>
+                            <div class="mt-3">
+                                <button class="btn btn-warning btn-sm edit-post-btn" data-post-id="{{ post.id }}" data-bs-toggle="modal" data-bs-target="#editPostsModal">
+                                    <i class="fas fa-pen"></i> Sửa
+                                </button>
+                                <button class="btn btn-danger btn-sm delete-post-btn" data-post-id="{{ post.id }}" data-bs-toggle="modal" data-bs-target="#deletePostsModal">
+                                    <i class="fas fa-trash"></i> Xóa
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -175,13 +182,13 @@
         {% if all_posts %}
         <div class="row">
             {% for post in all_posts %}
-            <div class="col-md-6 mb-4">
-                <div class="card">
+            <div class="col-12 mb-4">  <!-- Changed from col-md-6 to col-12 -->
+                <div class="card shadow-sm">
                     {% if post.image_url %}
                     <img src="{{ post.image_url }}" class="card-img-top" alt="{{ post.title }}">
                     {% endif %}
                     <div class="card-body">
-                        <h5 class="card-title">{{ (page-1)*10 + loop.index }}. {{ post.title }}</h5>
+                        <h5 class="card-title">{{ post.title }}</h5>
                         <p class="card-text">{{ post.content }}</p>
                         <p class="card-text"><small class="text-muted">Tác giả: {{ post.author }} | Ngày: {{ post.date }} | Trạng thái: {{ post.task }}</small></p>
                     </div>

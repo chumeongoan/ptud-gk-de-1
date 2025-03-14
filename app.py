@@ -345,6 +345,109 @@ def new_post():
     
     return render_template('new_post.html', user=user)
 
+@app.route('/dashboard')
+def dashboard():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    # Get user directly from database
+    user = get_user_by_id(session['user_id'])
+    if not user:
+        flash("Người dùng không tồn tại. Vui lòng đăng nhập lại.", "error")
+        return redirect(url_for('login'))
+    
+    # Collect dashboard statistics
+    conn = get_db_connection()
+    
+    # Post statistics
+    total_posts = conn.execute('SELECT COUNT(*) FROM posts').fetchone()[0]
+    recent_posts = conn.execute('SELECT * FROM posts ORDER BY id DESC LIMIT 5').fetchall()
+    posts_by_status = conn.execute(
+        'SELECT task, COUNT(*) as count FROM posts GROUP BY task'
+    ).fetchall()
+    
+    # User statistics
+    total_users = conn.execute('SELECT COUNT(*) FROM users').fetchone()[0]
+    users_by_role = conn.execute(
+        'SELECT role, COUNT(*) as count FROM users GROUP BY role'
+    ).fetchall()
+    active_users = conn.execute(
+        'SELECT COUNT(*) FROM users WHERE is_blocked = 0'
+    ).fetchone()[0]
+    
+    # Author activity
+    author_activity = conn.execute('''
+        SELECT author, COUNT(*) as post_count 
+        FROM posts 
+        GROUP BY author 
+        ORDER BY post_count DESC 
+        LIMIT 5
+    ''').fetchall()
+    
+    # Post date distribution (for charts)
+    post_dates = conn.execute('''
+        SELECT date, COUNT(*) as count 
+        FROM posts 
+        GROUP BY date 
+        ORDER BY date DESC 
+        LIMIT 10
+    ''').fetchall()
+    
+    conn.close()
+    
+    # Convert to appropriate formats for the template
+    recent_posts = [dict(post) for post in recent_posts]
+    posts_by_status = [dict(item) for item in posts_by_status]
+    users_by_role = [dict(item) for item in users_by_role]
+    author_activity = [dict(item) for item in author_activity]
+    post_dates = [dict(item) for item in post_dates]
+    
+    return render_template('dashboard.html', 
+                          user=user,
+                          total_posts=total_posts,
+                          total_users=total_users,
+                          recent_posts=recent_posts,
+                          posts_by_status=posts_by_status,
+                          users_by_role=users_by_role,
+                          active_users=active_users,
+                          inactive_users=total_users - active_users,
+                          author_activity=author_activity,
+                          post_dates=post_dates)
+
+@app.route('/get_post/<int:post_id>')
+def get_post(post_id):
+    post = get_post_by_id(post_id)
+    if post:
+        return jsonify(post)
+    return jsonify({"error": "Post not found"}), 404
+
+@app.route('/update_post', methods=['POST'])
+def update_post_route():
+    post_data = request.json
+    post_id = int(post_data['id'])
+    success = update_post(
+        post_id=post_id,
+        title=post_data.get('title'),
+        content=post_data.get('content'),
+        date=post_data.get('date'),
+        task=post_data.get('task')
+    )
+    if success:
+        return jsonify({"status": "success"})
+    return jsonify({"status": "error", "message": "Failed to update post"}), 400
+
+@app.route('/delete_post', methods=['POST'])
+def delete_post_route():
+    post_id = int(request.json['id'])
+    # Implement post deletion here
+    # For now just returning success
+    return jsonify({"status": "success"})
+
+@app.route('/delete_posts', methods=['POST'])
+def delete_posts():
+    # Implement multiple post deletion here
+    return redirect(url_for('index'))
+
 if __name__ == '__main__':
     # Initialize database
     init_db()
