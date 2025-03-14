@@ -106,6 +106,9 @@
                 {% for post in user_posts %}
                 <div class="col-md-6 mb-4">
                     <div class="card">
+                        {% if post.image_url %}
+                        <img src="{{ post.image_url }}" class="card-img-top" alt="{{ post.title }}">
+                        {% endif %}
                         <div class="card-body">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="post_ids" value="{{ post.id }}" id="post_{{ post.id }}">
@@ -174,6 +177,9 @@
             {% for post in all_posts %}
             <div class="col-md-6 mb-4">
                 <div class="card">
+                    {% if post.image_url %}
+                    <img src="{{ post.image_url }}" class="card-img-top" alt="{{ post.title }}">
+                    {% endif %}
                     <div class="card-body">
                         <h5 class="card-title">{{ (page-1)*10 + loop.index }}. {{ post.title }}</h5>
                         <p class="card-text">{{ post.content }}</p>
