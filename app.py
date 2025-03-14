@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from datetime import datetime
 import sqlite3
 import os
+import random
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
@@ -30,7 +31,7 @@ def init_db():
     )
     ''')
     
-    # Create posts table
+    # Create posts table with image_url field
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS posts (
         id INTEGER PRIMARY KEY,
@@ -38,11 +39,27 @@ def init_db():
         content TEXT NOT NULL,
         author TEXT NOT NULL,
         date TEXT NOT NULL,
-        task TEXT DEFAULT 'Đã đăng'
+        task TEXT DEFAULT 'Đã đăng',
+        image_url TEXT
     )
     ''')
     
     conn.commit()
+    conn.close()
+
+def update_schema():
+    """Add missing image_url column to posts table if it doesn't exist"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Check if image_url column exists
+    columns = [column[1] for column in cursor.execute('PRAGMA table_info(posts)')]
+    
+    if 'image_url' not in columns:
+        print("Adding image_url column to posts table")
+        cursor.execute('ALTER TABLE posts ADD COLUMN image_url TEXT')
+        conn.commit()
+    
     conn.close()
 
 # User functions
@@ -119,18 +136,21 @@ def get_posts_by_author(author):
     return [dict(post) for post in posts]
 
 def create_post(title, content, author, date, task="Đã đăng"):
+    # Generate a random Picsum image URL
+    image_url = f"https://picsum.photos/800/400?random={random.randint(1, 1000)}"
+    
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute(
-        'INSERT INTO posts (title, content, author, date, task) VALUES (?, ?, ?, ?, ?)',
-        (title, content, author, date, task)
+        'INSERT INTO posts (title, content, author, date, task, image_url) VALUES (?, ?, ?, ?, ?, ?)',
+        (title, content, author, date, task, image_url)
     )
     post_id = cursor.lastrowid
     conn.commit()
     conn.close()
     return post_id
 
-def update_post(post_id, title=None, content=None, author=None, date=None, task=None):
+def update_post(post_id, title=None, content=None, author=None, date=None, task=None, image_url=None):
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -145,14 +165,33 @@ def update_post(post_id, title=None, content=None, author=None, date=None, task=
     author = author if author is not None else post['author']
     date = date if date is not None else post['date']
     task = task if task is not None else post['task']
+    image_url = image_url if image_url is not None else post['image_url']
     
     cursor.execute(
-        'UPDATE posts SET title=?, content=?, author=?, date=?, task=? WHERE id=?',
-        (title, content, author, date, task, post_id)
+        'UPDATE posts SET title=?, content=?, author=?, date=?, task=?, image_url=? WHERE id=?',
+        (title, content, author, date, task, image_url, post_id)
     )
     conn.commit()
     conn.close()
     return True
+
+def add_images_to_posts():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Get all posts without image URLs
+    posts = cursor.execute('SELECT id FROM posts WHERE image_url IS NULL').fetchall()
+    
+    for post in posts:
+        # Generate a random Picsum image URL
+        image_url = f"https://picsum.photos/800/400?random={random.randint(1, 1000)}"
+        
+        # Update the post with the new image URL
+        cursor.execute('UPDATE posts SET image_url = ? WHERE id = ?', (image_url, post['id']))
+    
+    conn.commit()
+    conn.close()
+    print(f"Added images to {len(posts)} posts")
 
 # Routes
 @app.route('/', defaults={'page': 1})
@@ -285,7 +324,6 @@ def new_post():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    # Get user directly from database
     user = get_user_by_id(session['user_id'])
     if not user:
         flash("Người dùng không tồn tại. Vui lòng đăng nhập lại.", "error")
@@ -295,7 +333,6 @@ def new_post():
         title = request.form['title']
         content = request.form['content']
         
-        # Create post using SQLite
         post_id = create_post(
             title=title,
             content=content,
@@ -312,8 +349,10 @@ if __name__ == '__main__':
     # Initialize database
     init_db()
     
-    # Migrate data from JSON files if needed
-    # Uncomment the next line for first run only
-    # migrate_json_to_sqlite()
+    # Update schema
+    update_schema()
+    
+    # Add images to existing posts (run once)
+    add_images_to_posts()
     
     app.run(debug=True)
