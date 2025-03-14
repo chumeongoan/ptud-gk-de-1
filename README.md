@@ -57,7 +57,7 @@ A web-based blog management system built with Flask and SQLite that allows users
    python app.py
 
 
-** Access the application
+4. **Access the application**
 
 Open your browser and go to http://127.0.0.1:5000/
 Register a new account or login with existing credentials
@@ -65,3 +65,6 @@ Default admin account
 
 Email: admin@example.com
 Password: 123
+
+Frontend : Layout 1 - Single Column (Một Cột)
+Chức năng : Option 1 : Viết trang Dashboard
